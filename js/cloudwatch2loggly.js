@@ -1,8 +1,6 @@
 var aws = require('aws-sdk')
     , Q = require('q')
-    , request = require('request')
-    , Transform = require('stream').Transform
-    , fs = require('fs');
+    , request = require('request');
 
 //AWS keys configuration
 //user need to edit while uploading code via blueprint
@@ -185,16 +183,25 @@ function fetchEventsFromLogStream(logGroupName, logStreamName){
 //converts the event to a valid JSON object with the sufficient infomation required
 function parseEvent(event, logGroupName, logStreamName){
     
+    var postEventToLogglyPromises = [];
+    
     return Q.Promise(function(resolve, reject) {
         var eventData = {
-            'message'       : event.message,
+                              //remove '\n' character in the last of the event
+            'message'       : event.message.substring(0,event.message.length-1),
             'logGroupName'  : logGroupName,
             'logStreamName' : logStreamName,
             'timestamp'     : new Date(event.timestamp).toISOString(),
             'ingestionTime' : new Date(event.ingestionTime).toGMTString(),
         };
         
-        postEventToLoggly(eventData);
+        var postEventToLogglyPromise = postEventToLoggly(eventData);
+        postEventToLogglyPromises.push(postEventToLogglyPromise);
+        Q.allSettled(postEventToLogglyPromises).then(function() {
+            resolve();
+        }, function() {
+            reject();
+        });
     });
 }
 
@@ -203,35 +210,53 @@ function parseEvent(event, logGroupName, logStreamName){
 //the count of zero. 
 function postEventToLoggly(event){
     
-    if(parsedEvents.length == 100){
+    return Q.promise(function(resolve, reject){
+        if(parsedEvents.length == 100){
         
-        //get all the 100 events, stringify them and join them
-        //with the new line character which can be sent to Loggly
-        //via bulk endpoint
-        var finalEvent = parsedEvents.map(JSON.stringify).join('\n');
-        console.log('creating final event');
-        
-        //empty the main events array immediately to hold new events
-        parsedEvents = [];
+            //get all the 100 events, stringify them and join them
+            //with the new line character which can be sent to Loggly
+            //via bulk endpoint
+            var finalEvent = parsedEvents.map(JSON.stringify).join('\n');
+            console.log('creating final event');
 
-        //creating logglyURL at runtime, so that user can change the tag or customer token in the go
-        //by modifying the current script
-        var logglyURL = logglyConfiguration.url + '/' + logglyConfiguration.customerToken + '/tag/' + logglyConfiguration.tags;
-        
-        // Stream the event to loggly.
-        var bufferStream = new Transform();
-        bufferStream.push(finalEvent)
-        bufferStream.end()
-        bufferStream.pipe(request.post(logglyURL))
-            .on('error', function(err) {
-                console.log(err);
-            })
-            .on('end', function() {
-                console.log('request sent');
-            });
-    }
-    else{
-        parsedEvents.push(event);
-        resolve();
-    }
+            //empty the main events array immediately to hold new events
+            parsedEvents = [];
+
+            //creating logglyURL at runtime, so that user can change the tag or customer token in the go
+            //by modifying the current script
+            var logglyURL = logglyConfiguration.url + '/' + logglyConfiguration.customerToken + '/tag/' + logglyConfiguration.tags;
+
+            //create request options to send logs
+            try{
+                var requestOptions = {
+                    uri     : logglyURL,
+                    method  : 'POST',
+                    headers : {}
+                };
+                
+                //set body as the final event
+                requestOptions.body = finalEvent;
+
+                //now send the logs to Loggly
+                request(requestOptions, function(err, response, body){
+                    if(err){
+                        console.log('Error while posting logs to Loggly');
+                        reject();
+                    }
+                    else{
+                        resolve();
+                    }
+                });
+
+            }
+            catch(ex){
+                console.log(ex.message);
+                reject();
+            }
+        }
+        else{
+            parsedEvents.push(event);
+            resolve();
+        }
+    });
 }
