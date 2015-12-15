@@ -45,7 +45,11 @@ exports.handler = function(event, context) {
     
     //initiate the script here
     getLogGroupsFromAWSCloudwatch().then(function() {
-        context.done();
+        sendRemainingEvents().then(function(){
+            context.done();
+        }, function(){
+            context.done();    
+        });
     }, function() {
         
     });
@@ -183,8 +187,6 @@ function fetchEventsFromLogStream(logGroupName, logStreamName){
 //converts the event to a valid JSON object with the sufficient infomation required
 function parseEvent(event, logGroupName, logStreamName){
     
-    var postEventToLogglyPromises = [];
-    
     return Q.Promise(function(resolve, reject) {
         var eventData = {
                               //remove '\n' character in the last of the event
@@ -195,68 +197,92 @@ function parseEvent(event, logGroupName, logStreamName){
             'ingestionTime' : new Date(event.ingestionTime).toGMTString(),
         };
         
-        var postEventToLogglyPromise = postEventToLoggly(eventData);
-        postEventToLogglyPromises.push(postEventToLogglyPromise);
-        Q.allSettled(postEventToLogglyPromises).then(function() {
+        postEventToLoggly(eventData).then(function(){
             resolve();
-        }, function() {
+        }, function(){
             reject();
         });
+        
     });
 }
 
 //uploads the events to Loggly
-//we will hold the events in an array until they reaches to 
-//the count of zero. 
+//we will hold the events in an array until they reaches to 100
+//then set the count of zero. 
 function postEventToLoggly(event){
     
     return Q.promise(function(resolve, reject){
         if(parsedEvents.length == 100){
-        
-            //get all the 100 events, stringify them and join them
-            //with the new line character which can be sent to Loggly
-            //via bulk endpoint
-            var finalEvent = parsedEvents.map(JSON.stringify).join('\n');
-            console.log('creating final event');
-
-            //empty the main events array immediately to hold new events
-            parsedEvents = [];
-
-            //creating logglyURL at runtime, so that user can change the tag or customer token in the go
-            //by modifying the current script
-            var logglyURL = logglyConfiguration.url + '/' + logglyConfiguration.customerToken + '/tag/' + logglyConfiguration.tags;
-
-            //create request options to send logs
-            try{
-                var requestOptions = {
-                    uri     : logglyURL,
-                    method  : 'POST',
-                    headers : {}
-                };
-                
-                //set body as the final event
-                requestOptions.body = finalEvent;
-
-                //now send the logs to Loggly
-                request(requestOptions, function(err, response, body){
-                    if(err){
-                        console.log('Error while posting logs to Loggly');
-                        reject();
-                    }
-                    else{
-                        resolve();
-                    }
-                });
-
-            }
-            catch(ex){
-                console.log(ex.message);
+            upload().then(function(){
+                resolve();
+            }, function(){
                 reject();
-            }
+            });
         }
         else{
             parsedEvents.push(event);
             resolve();
+        }
+    });
+}
+
+//checks if any more events are left
+//after sending events in multiples of 100
+function sendRemainingEvents(){
+    return Q.promise(function(resolve, reject){
+        if(parsedEvents.length > 0){
+            upload().then(function(){
+                resolve();
+            }, function(){
+                reject(); 
+            });
+        }
+        else{
+            resolve();
+        }
+    });
+}
+
+function upload(){
+    return Q.promise(function(resolve, reject){
+        
+        //get all the events, stringify them and join them
+        //with the new line character which can be sent to Loggly
+        //via bulk endpoint
+        var finalEvent = parsedEvents.map(JSON.stringify).join('\n');
+        
+        //empty the main events array immediately to hold new events
+        parsedEvents.length = 0;
+
+        //creating logglyURL at runtime, so that user can change the tag or customer token in the go
+        //by modifying the current script
+        var logglyURL = logglyConfiguration.url + '/' + logglyConfiguration.customerToken + '/tag/' + logglyConfiguration.tags;
+
+        //create request options to send logs
+        try{
+            var requestOptions = {
+                uri     : logglyURL,
+                method  : 'POST',
+                headers : {}
+            };
+
+            requestOptions.body = finalEvent;
+
+            //now send the logs to Loggly
+            request(requestOptions, function(err, response, body){
+                if(err){
+                    console.log('Error while uploading events to Loggly');
+                    reject();
+                }
+                else{
+                    resolve();
+                }
+            });
+
+        }
+        catch(ex){
+            console.log(ex.message);
+            reject();
         }
     });
 }
