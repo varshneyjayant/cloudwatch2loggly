@@ -58,5 +58,6 @@ using the command line tools.
     * **Name:** *cloudwatch2loggly*
     * Upload lambda function (zip file you made above.)
     * **Handler*:** *cloudwatch2loggly.handler*
-    * Set Timeout to 2 minutes
+    * Set Role : *S3 Execution Role*
+    * Set Timeout to 5 minutes
 
