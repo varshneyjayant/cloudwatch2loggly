@@ -59,5 +59,13 @@ using the command line tools.
     * Upload lambda function (zip file you made above.)
     * **Handler*:** *cloudwatch2loggly.handler*
     * Set Role : *S3 Execution Role*
-    * Set Timeout to 5 minutes
+    * Set Timeout to 2 minutes
+  3. Go to your Lamda function and select the "Event sources" tab
+    * Click on **Add Event Source**
+    * Event Source Type : *Scheduled Event*
+    * Name : Provide any customized name. e.g. Cloudwatch2Loggly Event Source
+    * Description: Invokes Lambda function in every 5 minutes
+    * Schedule expression : *rate(5 minutes)*
+    * Enable Event Source : *Enable Now*
+ Now click on submit and wait for the events to occur in Loggly
 
