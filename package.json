@@ -15,7 +15,7 @@
     "Cloudwatch"
   ],
   "author": "psquickitjayant",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/psquickitjayant/cloudwatch2loggly/issues"
   },
