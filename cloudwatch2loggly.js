@@ -22,18 +22,18 @@ var cloudWatchLogs = new aws.CloudWatchLogs({
     apiVersion : '2014-03-28'
 });
 
-var nowDate = new Date();
-
-//time upto which we want to fetch logs
-var logEndTime = nowDate.getTime();
-
-//time from which we want to fetch logs
-var logStartTime = new Date(logEndTime - (5 * 60 * 1000)).getTime();
-var parsedEvents = [];
-
 //entry point
 exports.handler = function (event, context) {
   
+  var nowDate = new Date();
+
+  //time upto which we want to fetch logs
+  var logEndTime = nowDate.getTime();
+
+  //time from which we want to fetch logs
+  var logStartTime = new Date(logEndTime - (5 * 60 * 1000)).getTime();
+  var parsedEvents = [];
+
   //setup keys in the aws object
   aws.config.update({
     accessKeyId : awsConfiguration.accessKeyId,
