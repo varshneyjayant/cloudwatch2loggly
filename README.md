@@ -14,16 +14,6 @@ cd cloudwatch2loggly
 
 ##Open the cloudwatch2loggly.js and provide the following information in it
 
-* Your AWS accout details
-```javascript
-//AWS keys configuration
-var awsConfiguration = {
-  accessKeyId : 'xxx',
-  secretAccessKey : 'xxx',
-  region : 'xxx'
-};
-```
-
 * Your Loggly customer token
 ```javascript
 //loggly url, token and tag configuration
@@ -52,13 +42,17 @@ description of how to do this.  I also found [this blog post](http://alestic.com
 using the command line tools.
 
 ### Create and upload the cloudwatch2loggly function in the AWS Console
-1. Create lambda function
+1. Create Role
+  1. Sign in to your AWS account and open IAM console https://console.aws.amazon.com/iam/
+  2. In your IAM console create a new Role say, 'cloudwatch-full-access'
+  3. Apply policy 'CloudWatchFullAccess' and save.
+2. Create lambda function
   1. https://console.aws.amazon.com/lambda/home
   2. Click "Create a Lambda function" button. *(Choose "Upload a .ZIP file")*
     * **Name:** *cloudwatch2loggly*
     * Upload lambda function (zip file you made above.)
     * **Handler*:** *cloudwatch2loggly.handler*
-    * Set Role : *S3 Execution Role*
+    * Set Role : *cloudwatch-full-access*
     * Set Timeout to 2 minutes
   3. Go to your Lamda function and select the "Event sources" tab
     * Click on **Add Event Source**
