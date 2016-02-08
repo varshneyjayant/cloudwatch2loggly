@@ -2,14 +2,6 @@ var aws = require('aws-sdk')
   , Q = require('q') 
   , request = require('request');
 
-//AWS keys configuration
-//user need to edit while uploading code via blueprint
-var awsConfiguration = {
-  accessKeyId : 'xxxxx',
-  secretAccessKey : 'xxxxxx',
-  region : 'xxxxx'
-};
-
 //loggly url, token and tag configuration
 //user need to edit while uploading code via blueprint
 var logglyConfiguration = {
@@ -33,13 +25,6 @@ exports.handler = function (event, context) {
   //time from which we want to fetch logs
   var logStartTime = new Date(logEndTime - (5 * 60 * 1000)).getTime();
   var parsedEvents = [];
-
-  //setup keys in the aws object
-  aws.config.update({
-    accessKeyId : awsConfiguration.accessKeyId,
-    secretAccessKey : awsConfiguration.secretAccessKey,
-    region : awsConfiguration.region
-  });
 
   //initiate the script here
   getLogGroupsFromAWSCloudwatch().then(function () {
