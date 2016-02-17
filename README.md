@@ -56,10 +56,10 @@ using the command line tools.
     * Set Timeout to 2 minutes
   3. Go to your Lamda function and select the "Event sources" tab
     * Click on **Add Event Source**
-    * Event Source Type : *Scheduled Event*
-    * Name : Provide any customized name. e.g. Cloudwatch2Loggly Event Source
-    * Description: Invokes Lambda function in every 5 minutes
-    * Schedule expression : *rate(5 minutes)*
+    * Event Source Type : *CloudWatch Logs*
+    * Log Group : Select your log group whose logs you want to send to Loggly.
+    * Filter Name: Provide your filter name.
+    * Filter Pattern: This is not a mandatory field. You can keep it empty.
     * Enable Event Source : *Enable Now*
  Now click on submit and wait for the events to occur in Loggly
 
