@@ -7,12 +7,27 @@ var aws = require('aws-sdk')
 //user need to edit while uploading code via blueprint
 var logglyConfiguration = {
   url : 'http://logs-01.loggly.com/bulk',
-  customerToken : 'xxxxxx',
   tags : 'cloudwatch2loggly'
 };
 
+
+//To setup your encrypted Loggly Customer Token inside the script use the following steps 
+//1. Create a KMS key - http://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html
+//2. Encrypt the Loggly Customer Token using the AWS CLI
+//        aws kms encrypt --key-id alias/<your KMS key arn> --plaintext "<your loggly customer token>"
+//3. Copy the base-64 encoded, encrypted token from step 2's CLI output (CiphertextBlob attribute) and replace it with the
+// "your KMS encypted key" below in line no 22
+
+
+var encryptedLogglyToken = "your KMS encypted key";
+var encryptedLogglyTokenBuffer = new Buffer(encryptedLogglyToken, "base64");
+
 var cloudWatchLogs = new aws.CloudWatchLogs({
     apiVersion : '2014-03-28'
+});
+
+var kms = new aws.KMS({
+    apiVersion : '2014-11-01'
 });
 
 //entry point
@@ -21,11 +36,34 @@ exports.handler = function (event, context) {
   var parsedEvents = [];
   var totalLogs = 0;
 
-  sendEvents(event).then(function(){
-    context.succeed('all events are sent to Loggly');
+  decryptLogglyToken().then(function(){
+    sendEvents(event).then(function(){
+      context.succeed('all events are sent to Loggly');
+    }, function(){
+      context.done();  
+    });  
   }, function(){
     context.done();
-  });
+  })
+
+  //decrypts your Loggly Token from your KMS key
+  function decryptLogglyToken(){
+    return Q.Promise(function (resolve, reject) {
+      var params = {
+        CiphertextBlob: encryptedLogglyTokenBuffer
+      };
+      kms.decrypt(params, function(error, data){
+        if(error){
+          console.log(error);
+          reject();
+        }
+        else{
+          logglyConfiguration.customerToken = data.Plaintext.toString('ascii');
+          resolve();
+        }
+      });
+    });
+  }
   
   function sendEvents(event){
     return Q.Promise(function (resolve, reject) {
