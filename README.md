@@ -46,7 +46,11 @@ using the command line tools.
   1. Sign in to your AWS account and open IAM console https://console.aws.amazon.com/iam/
   2. In your IAM console create a new Role say, 'cloudwatch-full-access'
   3. Apply policy 'CloudWatchFullAccess' and save.
-2. Create lambda function
+2. Create KMS Key
+  1. Create a KMS key - http://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html
+  2. Encrypt the Loggly Customer Token using the AWS CLI - **aws kms encrypt --key-id alias/&lt;your KMS key arn&gt; --plaintext "&lt;your loggly customer token&gt;"**
+  3. Copy the base-64 encoded, encrypted token from step 2's CLI output (CiphertextBlob attribute) and replace it with the "your KMS encypted key" in the script at line no 22
+3. Create lambda function
   1. https://console.aws.amazon.com/lambda/home
   2. Click "Create a Lambda function" button. *(Choose "Upload a .ZIP file")*
     * **Name:** *cloudwatch2loggly*
