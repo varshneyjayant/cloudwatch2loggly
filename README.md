@@ -11,18 +11,6 @@ Sends logs from Cloudwatch logs to Loggly using Lamda function
 git clone https://github.com/psquickitjayant/cloudwatch2loggly.git
 cd cloudwatch2loggly
 ```
-
-##Open the cloudwatch2loggly.js and provide the following information in it
-
-* Your Loggly customer token
-```javascript
-//loggly url, token and tag configuration
-var logglyConfiguration = {
-  url : 'http://logs-01.loggly.com/bulk',
-  customerToken : 'xxx',
-  tags : 'cloudwatch2loggly'
-};
-```
 * Install required npm packages.
 ```
 npm install
@@ -45,7 +33,8 @@ using the command line tools.
 1. Create Role
   1. Sign in to your AWS account and open IAM console https://console.aws.amazon.com/iam/
   2. In your IAM console create a new Role say, 'cloudwatch-full-access'
-  3. Apply policy 'CloudWatchFullAccess' and save.
+  3. Select Role Type as 'AWS Lambda'
+  4. Apply policy 'CloudWatchFullAccess' and save.
 2. Create KMS Key
   1. Create a KMS key - http://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html
   2. Encrypt the Loggly Customer Token using the AWS CLI - **aws kms encrypt --key-id alias/&lt;your KMS key arn&gt; --plaintext "&lt;your loggly customer token&gt;"**
@@ -66,4 +55,9 @@ using the command line tools.
     * Filter Pattern: This is not a mandatory field. You can keep it empty.
     * Enable Event Source : *Enable Now*
  Now click on submit and wait for the events to occur in Loggly
+
+**NOTE**: Always use latest version of **AWSCLI**. Some features like KMS may not work on older versions of AWSCLI. To upgrade, use the command given below
+
+`pip install --upgrade awscli`
+
 
