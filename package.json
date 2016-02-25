@@ -2,7 +2,7 @@
   "name": "cloudwatch2loggly",
   "version": "1.0.0",
   "description": "A NodeJS library to send Cloudwatch logs to Loggly",
-  "main": "cloudwatch2loggly.js",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
