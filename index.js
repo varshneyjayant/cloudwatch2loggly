@@ -1,3 +1,10 @@
+//To setup your encrypted Loggly Customer Token inside the script use the following steps 
+//1. Create a KMS key - http://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html
+//2. Encrypt the Loggly Customer Token using the AWS CLI
+//        aws kms encrypt --key-id alias/<your KMS key arn> --plaintext "<your loggly customer token>"
+//3. Copy the base-64 encoded, encrypted token from step 2's CLI output (CiphertextBlob attribute) and replace it with the
+// "your KMS encypted key" below in line no 19
+
 var aws = require('aws-sdk'),
   http = require('http'),
   zlib = require('zlib');
@@ -5,18 +12,9 @@ var aws = require('aws-sdk'),
 //loggly url, token and tag configuration
 //user need to edit while uploading code via blueprint
 var logglyConfiguration = {
-  url: 'http://logs-01.loggly.com/bulk',
+  hostName: 'logs-01.loggly.com',
   tags: 'CloudWatch2Loggly'
 };
-
-
-//To setup your encrypted Loggly Customer Token inside the script use the following steps 
-//1. Create a KMS key - http://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html
-//2. Encrypt the Loggly Customer Token using the AWS CLI
-//        aws kms encrypt --key-id alias/<your KMS key arn> --plaintext "<your loggly customer token>"
-//3. Copy the base-64 encoded, encrypted token from step 2's CLI output (CiphertextBlob attribute) and replace it with the
-// "your KMS encypted key" below in line no 21
-
 
 var encryptedLogglyToken = "your KMS encypted key";
 var encryptedLogglyTokenBuffer = new Buffer(encryptedLogglyToken, "base64");
@@ -35,7 +33,7 @@ exports.handler = function (event, context) {
   var parsedEvents = [];
   var totalLogs = 0;
 
-  function decryptLogglyToken() {
+  var decryptLogglyToken = function () {
     var params = {
       CiphertextBlob: encryptedLogglyTokenBuffer
     };
@@ -47,11 +45,10 @@ exports.handler = function (event, context) {
         logglyConfiguration.customerToken = data.Plaintext.toString('ascii');
       }
     });
-  }
-  decryptLogglyToken();
+  }();
 
-  function sendEvents(event) {
-    var payload = new Buffer(event.awslogs.data, 'base64');
+  var sendEvents = function (eventData) {
+    var payload = new Buffer(eventData.awslogs.data, 'base64');
 
     zlib.gunzip(payload, function (error, result) {
       if (error) {
@@ -66,8 +63,7 @@ exports.handler = function (event, context) {
         }
       }
     });
-  };
-  sendEvents(event);
+  }(event);
 
   //converts the event to a valid JSON object with the sufficient infomation required
   function parseEvent(event, logGroupName, logStreamName) {
@@ -117,7 +113,7 @@ exports.handler = function (event, context) {
     //create request options to send logs
     try {
       var options = {
-        hostname: 'logs-01.loggly.com',
+        hostname: logglyConfiguration.hostName,
         path: '/bulk/' + logglyConfiguration.customerToken + '/tag/' + encodeURIComponent(logglyConfiguration.tags),
         method: 'POST',
         headers: {
