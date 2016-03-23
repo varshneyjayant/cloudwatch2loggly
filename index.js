@@ -53,7 +53,6 @@ exports.handler = function (event, context) {
     zlib.gunzip(payload, function (error, result) {
       if (error) {
         context.fail(error);
-        reject();
       } else {
         var result_o = JSON.parse(result.toString('ascii'));
         totalLogs = result_o.logEvents.length;
@@ -152,7 +151,7 @@ exports.handler = function (event, context) {
 
     } catch (ex) {
       console.log(ex.message);
-      reject();
+      context.fail(ex.message);
     }
   }
 };
