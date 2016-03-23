@@ -47,8 +47,8 @@ exports.handler = function (event, context) {
     });
   }();
 
-  var sendEvents = function (eventData) {
-    var payload = new Buffer(eventData.awslogs.data, 'base64');
+  var sendEvents = function (event) {
+    var payload = new Buffer(event.awslogs.data, 'base64');
 
     zlib.gunzip(payload, function (error, result) {
       if (error) {
