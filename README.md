@@ -1,5 +1,5 @@
 # cloudwatch2loggly
-Sends logs from Cloudwatch logs to Loggly using Lamda function
+Sends logs from Cloudwatch logs to Loggly using Lambda function
 
 ## More information about AWS Lambda and Loggly
   * http://aws.amazon.com/lambda/
